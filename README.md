@@ -3,6 +3,7 @@
 #/home/-user-/
 .vimrc
 .bashrc
+.xinitrc
 
 #/home/-user-/config
 /i3/config
