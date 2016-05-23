@@ -1,0 +1,42 @@
+#!/bin/bash
+
+#$1 == kernel version
+#$2 == uni / kernel ID
+
+#set stop on error
+set -e
+
+#if arg 1 isn't set, get the kernel version from the makefile
+KVER=$1
+if [ -z "$1" ]; then
+    KVER=$(awk 'NR==1{print $3}' Makefile);
+    KVER+=.$(awk 'NR==2{print $3}' Makefile);
+    KVER+=.$(awk 'NR==3{print $3}' Makefile);
+fi
+
+#if arg 2 isn't set, get the the local version from the config
+LVER=$2
+[ -z "$2" ] && LVER=$(cat .config | grep CONFIG_LOCALVERSION= | sed 's/.*"\(.*\)"[^"]*$/\1/' | cut -c 2- )
+
+#get the number of cpus
+PROC=$(nproc)
+let PROC=$PROC
+
+#get the dkms version
+VBOX=$(sudo pacman -Qs virtualbox-guest-dkms | awk 'NR==1{print$2}' | sed 's/.\{2\}$//')
+
+#echo vars
+echo "KVER = $KVER"
+echo "LVER = $LVER"
+echo "PROC = $PROC"
+echo "VBOX = $VBOX"
+
+#make the kernel
+make -j$PROC
+
+#copy to /boot
+sudo cp -v arch/x86/boot/bzImage /boot/vmlinuz-$KVER-$LVER
+
+#copy System.map and set up symlink
+sudo cp System.map /boot/System.map-$KVER-$LVER
+sudo ln -fs /boot/System.map-$KVER-$LVER /boot/System.map
