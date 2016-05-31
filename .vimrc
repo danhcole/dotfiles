@@ -29,6 +29,8 @@ else
 
 endif
 
+set runtimepath+=~/dotfiles/vim
+
 " Color Scheme
 colo monokai
 
