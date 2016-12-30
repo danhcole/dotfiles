@@ -90,10 +90,30 @@ alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
 
-#Make aliases
-alias test='make test'
-alias grind='make grind'
-alias makemake='cp ~/proto/Makefile.proto Makefile' 
+function cup {
+        for i in $(host $1 | awk '{ if (substr($4,1,1) ~ /[0-9]/ ) print $4 }' | sort); do
+                ping -c 1 -w 1 $i > /dev/null
+                if [[ $? -ne 0 ]]; then
+                        echo -e "$(host $i | awk '{print $5}')\t\t\e[1m\e[31mdown\e[39m\e[0m"
+                else
+                        echo -e  "$(host $i | awk '{print $5}')\t\t\e[1m\e[32mup\e[39m\e[0m"
+                fi
+        done
+}
+
+function ccmd {
+        for i in $(host $1 | awk '{ if (substr($4,1,1) ~ /[0-9]/) print $4 }'); do
+                ping -c 1 -w 1 $i > /dev/null
+                if [[ $? -ne 0 ]]; then
+                        echo -e "$(host $i | awk '{print $5}')\t\t\e[1m\e[31mdown\e[39m\e[0m"
+                else
+                        echo ""
+                        echo "Running $2 on $(host $i | awk '{print $5}')"
+                        ssh root@$i $2
+                        echo ""
+                fi
+        done
+}
 
 function ssr {
         ssh root@$1
