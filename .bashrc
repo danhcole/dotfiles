@@ -4,8 +4,6 @@
 
 umask 0077
 
-ulimit -u 256
-
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
 
@@ -100,6 +98,7 @@ function cup {
                 fi
         done
 }
+export -f cup
 
 function ccmd {
         for i in $(host $1 | awk '{ if (substr($4,1,1) ~ /[0-9]/) print $4 }'); do
@@ -114,6 +113,7 @@ function ccmd {
                 fi
         done
 }
+export -f ccmd
 
 function ssr {
         ssh root@$1
