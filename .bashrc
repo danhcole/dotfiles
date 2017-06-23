@@ -92,9 +92,9 @@ function cup {
         for i in $(host $1 | awk '{ if (substr($4,1,1) ~ /[0-9]/ ) print $4 }' | sort); do
                 ping -c 1 -w 1 $i > /dev/null
                 if [[ $? -ne 0 ]]; then
-                        echo -e "$(host $i | awk '{print $5}')\t\t\e[1m\e[31mdown\e[39m\e[0m"
+                        host $i | awk '{printf "%-40s\033[1;m\033[31;mdown\033[39;m\033[0;m\n", $5}'
                 else
-                        echo -e  "$(host $i | awk '{print $5}')\t\t\e[1m\e[32mup\e[39m\e[0m"
+                        host $i | awk '{printf "%-40s\033[1;m\033[32;mup\033[39;m\033[0;m\n", $5}'
                 fi
         done
 }
@@ -104,7 +104,7 @@ function ccmd {
         for i in $(host $1 | awk '{ if (substr($4,1,1) ~ /[0-9]/) print $4 }'); do
                 ping -c 1 -w 1 $i > /dev/null
                 if [[ $? -ne 0 ]]; then
-                        echo -e "$(host $i | awk '{print $5}')\t\t\e[1m\e[31mdown\e[39m\e[0m"
+                        host $i | awk '{printf "%-40s\033[1;m\033[31;mdown\033[39;m\033[0;m\n", $5}'
                 else
                         echo ""
                         echo "Running $2 on $(host $i | awk '{print $5}')"
