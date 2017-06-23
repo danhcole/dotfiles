@@ -88,13 +88,24 @@ alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
 
+# set up color and style definitions
+export CClear=$'\e[0m'
+export CBold=$'\e[1m'
+export CRed=$'\e[031m'
+export CGreen=$'\e[032m'
+export CYellow=$'\e[033m'
+export CBlue=$'\e[034m'
+export CMagenta=$'\e[035m'
+export CWhite=$'\e[037m'
+
+
 function cup {
         for i in $(host $1 | awk '{ if (substr($4,1,1) ~ /[0-9]/ ) print $4 }' | sort); do
                 ping -c 1 -w 1 $i > /dev/null
                 if [[ $? -ne 0 ]]; then
-                        host $i | awk '{printf "%-40s\033[1;m\033[31;mdown\033[39;m\033[0;m\n", $5}'
+                        host $i | awk '{printf "%-40s" ENVIRON["CBold"] ENVIRON["CRed"] "down\n" ENVIRON["CClear"], $5}'
                 else
-                        host $i | awk '{printf "%-40s\033[1;m\033[32;mup\033[39;m\033[0;m\n", $5}'
+                        host $i | awk '{printf "%-40s" ENVIRON["CBold"] ENVIRON["CGreen"] "up\n" ENVIRON["CClear"], $5}'
                 fi
         done
 }
@@ -104,7 +115,7 @@ function ccmd {
         for i in $(host $1 | awk '{ if (substr($4,1,1) ~ /[0-9]/) print $4 }'); do
                 ping -c 1 -w 1 $i > /dev/null
                 if [[ $? -ne 0 ]]; then
-                        host $i | awk '{printf "%-40s\033[1;m\033[31;mdown\033[39;m\033[0;m\n", $5}'
+                        host $i | awk '{printf "%-40s" ENVIRON["CBold"] ENVIRON["CRed"] "down\n" ENVIRON["CClear"], $5}'
                 else
                         echo ""
                         echo "Running $2 on $(host $i | awk '{print $5}')"
