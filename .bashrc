@@ -101,7 +101,7 @@ export CWhite=$'\e[037m'
 
 function cup {
         for i in $(host $1 | awk '{ if (substr($4,1,1) ~ /[0-9]/ ) print $4 }' | sort); do
-                ping -c 1 -w 1 $i > /dev/null
+                ping -c 1 -W 1 $i > /dev/null
                 if [[ $? -ne 0 ]]; then
                         host $i | awk '{printf "%-40s" ENVIRON["CBold"] ENVIRON["CRed"] "down\n" ENVIRON["CClear"], $5}'
                 else
