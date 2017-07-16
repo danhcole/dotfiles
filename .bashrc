@@ -156,4 +156,4 @@ fi
 
 export EDITOR=vim
 
-export PATH=$PATH:
+export PATH=$PATH:~/.cargo/bin
