@@ -64,6 +64,18 @@ function git_prompt_string() {
   [ -n "$git_where" ] && echo "on %{$CBlue%} ${git_where#(refs/heads/|tags/)}$(parse_git_state)%{$CClear%}"
 }
 
+# If inside NORMAL mode, show it in right prompt
+# Taken from @dougblackio
+function zle-line-init zle-keymap-select {
+    VIM_PROMPT="%{$CYellow%} [% NORMAL]%  %{$CClear%}"
+    RPROMPT="${${KEYMAP/vicmd/$VIM_PROMPT}/(main|viins)/}$(git_prompt_string) $EPS1"
+    zle reset-prompt
+}
+
+zle -N zle-line-init
+zle -N zle-keymap-select
+export KEYTIMEOUT=1
+
 #PROMPT='$CLGreen%n%\@%m$CClear:$CLBlue%~$CClear$(prompt_char) '
 PROMPT='%{$CLGreen%}%n%\@%m%{$CClear%}:%{$CLBlue%}%~%{$CClear%}$(prompt_char) '
-RPROMPT='$(git_prompt_string)'
+#RPROMPT='$(vim_prompt_string)$(git_prompt_string)'
