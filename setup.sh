@@ -16,10 +16,15 @@ fi
 if [[ -e ~/.vim ]]; then
     mv ~/.vim ~/.vim.$DATE
 fi
+if [[ -e ~/.zshrc ]]; then
+    mv ~/.zshrc ~/.zshrc.$DATE
+fi
 
 echo "Linking .rc files..."
 ln -s ~/dotfiles/.bashrc ~/.bashrc
 ln -s ~/dotfiles/.vimrc ~/.vimrc
+ln -s ~/dotfiles/.zshrc ~/.zshrc
+ln -s ~/dotfiles/zsh ~/.zsh
 
 echo "Linking vim environment..."
 ln -s ~/dotfiles/vim ~/.vim

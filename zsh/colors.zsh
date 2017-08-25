@@ -1,0 +1,13 @@
+# set up color and style definitions
+export CClear=$'\e[0m'
+export CBold=$'\e[1m'
+export CRed=$'\e[031m'
+export CLRed=$'\e[1;31m'
+export CGreen=$'\e[032m'
+export CLGreen=$'\e[1;32m'
+export CYellow=$'\e[033m'
+export CLYellow=$'\e[1;33m'
+export CBlue=$'\e[034m'
+export CLBlue=$'\e[1;34m'
+export CMagenta=$'\e[035m'
+export CWhite=$'\e[037m'
