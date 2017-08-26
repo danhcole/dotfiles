@@ -1,4 +1,4 @@
-#source sub-config scritps
+# Source sub-config scritps
 
 source ~/.zsh/paths.zsh
 source ~/.zsh/checks.zsh
@@ -11,3 +11,7 @@ source ~/.zsh/bindkeys.zsh
 source ~/.zsh/functions.zsh
 source ~/.zsh/history.zsh
 source ~/.zsh/zsh_hooks.zsh
+
+# General shell settings
+
+umask 0077

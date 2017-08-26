@@ -24,6 +24,8 @@ echo "Linking .rc files..."
 ln -s ~/dotfiles/.bashrc ~/.bashrc
 ln -s ~/dotfiles/.vimrc ~/.vimrc
 ln -s ~/dotfiles/.zshrc ~/.zshrc
+ln -s ~/dotfiles/sh ~/.sh
+ln -s ~/dotfiles/bash/ ~/.bash
 ln -s ~/dotfiles/zsh ~/.zsh
 
 echo "Linking vim environment..."
