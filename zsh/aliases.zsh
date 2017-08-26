@@ -2,6 +2,7 @@
 alias ll='ls -alFh'
 alias lst="ls -R | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'"
 alias dus='du -sckx * | sort -nr'
+alias grep='grep --color=auto'
 
 # Git commands (stolen from zanshin.net)
 alias ga='git add'
