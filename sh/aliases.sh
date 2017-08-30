@@ -1,4 +1,5 @@
 # Directory listings
+alias ls='ls --color'
 alias ll='ls -alFh'
 alias dus='du -sckx * | sort -nr'
 
