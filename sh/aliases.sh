@@ -1,5 +1,9 @@
 # Directory listings
-alias ls='ls --color'
+if [[ $IS_MAC ]]; then 
+    alias ls='ls -G'
+else
+    alias ls='ls --color'
+fi
 alias ll='ls -alFh'
 alias dus='du -sckx * | sort -nr'
 
