@@ -9,6 +9,7 @@ source ~/.bash/exports.bash
 source ~/.bash/functions.bash
 source ~/.bash/prompt.bash
 source ~/.bash/history.bash
+source ~/.bash/iterm2.bash
 
 # General shell settings
 
