@@ -28,7 +28,7 @@ function ssr {
 }
 
 function myip {
-    curl -s canihazip.com | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
+    curl -s https://canihazip.com | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
 }
 
 function bkp {
