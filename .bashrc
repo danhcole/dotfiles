@@ -10,6 +10,7 @@ source ~/.bash/functions.bash
 source ~/.bash/prompt.bash
 source ~/.bash/history.bash
 source ~/.bash/iterm2.bash
+source ~/.bash/ssh.bash
 
 # General shell settings
 
