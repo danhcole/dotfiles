@@ -8,3 +8,6 @@ alias lst="ls -R | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/
 
 # Colorize grep
 alias grep='grep --color=auto'
+
+# Standarize history display
+alias history='fc -l 1'
