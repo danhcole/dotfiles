@@ -34,3 +34,11 @@ function myip {
 function bkp {
     cp $1{,.bkp}
 }
+
+function fdiff {
+    if [[ $(which colordiff) ]]; then
+        colordiff -y -W $COLUMNS $1 $2 | less -R
+    else
+        diff -y -W $COLUMNS $1 $2 | less -R
+    fi
+}
