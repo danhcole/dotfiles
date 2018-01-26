@@ -36,7 +36,7 @@ function bkp {
 }
 
 function fdiff {
-    if [[ $(which colordiff) ]]; then
+    if [[ -x $(command -v colordiff) ]]; then
         colordiff -y -W $COLUMNS $1 $2 | less -R
     else
         diff -y -W $COLUMNS $1 $2 | less -R
