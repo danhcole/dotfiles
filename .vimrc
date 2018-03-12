@@ -60,6 +60,11 @@ autocmd FileType text setlocal autoindent expandtab softtabstop=2 textwidth=76 n
 " Don't do spell-checking on Vim help files
 autocmd FileType help setlocal nospell
 
+" set tabstops for ruby
+autocmd FileType ruby set softtabstop=2
+autocmd FileType ruby set sw=2
+autocmd FileType ruby set ts=2 
+
 " clang-format integration
 map <C-K> :pyf /usr/share/vim/addons/syntax/clang-format-3.8.py<cr>
 imap <C-K> <c-o>:pyf /usr/share/vim/addons/syntax/clang-format-3.8.py<cr>
