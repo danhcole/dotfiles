@@ -9,7 +9,7 @@ function prompt_char {
 GIT_PROMPT_PREFIX="%{$CGreen%} [%{$CClear%}"
 GIT_PROMPT_SUFFIX="%{$CGreen%}]%{$CClear%}"
 GIT_PROMPT_AHEAD="%{$CRed%}ANUM%{$CClear%}"
-GIT_PROMPT_BEHIND="%{$CLBlue$}BNUM%{$CClear%}"
+GIT_PROMPT_BEHIND="%{$CLBlue%}BNUM%{$CClear%}"
 GIT_PROMPT_MERGING="%{$CMagenta ⚡︎%{$CClear%}"
 GIT_PROMPT_UNTRACKED="%{$CRed%}u%{$CClear%}"
 GIT_PROMPT_MODIFIED="%{$CYellow%}d%{$CCLear%}"

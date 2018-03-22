@@ -39,22 +39,15 @@ colo monokai
 " Line Numbers
 set number
 
-"auto-indent by 8 spaces
+" Set tabs to 4 spaces
 set shiftwidth=4
-
-"set tab to 8 spaces
 set tabstop=4
-
-"repalce tab with 8 spaces, except for makefiles
 set expandtab
+
+" 
 autocmd FileType make setlocal noexpandtab
 
-" My settings when editing *.txt files
-"   - automatically indent lines according to previous lines
-"   - replace tab with 8 spaces
-"   - when I hit tab key, move 2 spaces instead of 8
-"   - wrap text if I go longer than 76 columns
-"   - check spelling
+" Set text-file specific options
 autocmd FileType text setlocal autoindent expandtab softtabstop=2 textwidth=76 nospell spelllang=en_us
 
 " Don't do spell-checking on Vim help files
@@ -64,8 +57,3 @@ autocmd FileType help setlocal nospell
 autocmd FileType ruby set softtabstop=2
 autocmd FileType ruby set sw=2
 autocmd FileType ruby set ts=2 
-
-" clang-format integration
-map <C-K> :pyf /usr/share/vim/addons/syntax/clang-format-3.8.py<cr>
-imap <C-K> <c-o>:pyf /usr/share/vim/addons/syntax/clang-format-3.8.py<cr>
-
