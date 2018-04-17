@@ -39,6 +39,11 @@ colo monokai
 " Line Numbers
 set number
 
+" Folding
+set foldmethod=syntax
+set foldlevelstart=99
+nnoremap <silent> <Space> @=(foldlevel('.')?'za':"\<Space>")<CR>
+
 " Set tabs to 4 spaces
 set shiftwidth=4
 set tabstop=4

@@ -5,5 +5,5 @@ if [[ -x /usr/libexec/path_helper ]]; then
 fi
 
 if [[ -x $(which go) ]]; then
-    GOPATH=$(go env GOPATH)
+    export GOPATH=$(go env GOPATH)
 fi
