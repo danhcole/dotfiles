@@ -1,16 +1,30 @@
 # copied from https://gist.github.com/4415470
-# Adapted from code found at <https://gist.github.com/1712320>.
+# Adapted from code found at <https://gist.github.com/1712320>
+
+# Characters
+SEGMENT_SEPARATOR="\ue0b0"
+PLUSMINUS="\u00b1"
+BRANCH="\ue0a0"
+DETACHED="\u27a6"
+CROSS="\u2718"
+LIGHTNING="\u26a1"
+GEAR="\u2699"
 
 function prompt_char {
-    git branch >/dev/null 2>/dev/null && echo 'Γ' && return
-    echo '$'
+    #git branch >/dev/null 2>/dev/null && echo -e " $BRANCH" && return
+    if [ $? -ne 0 ]; then
+        echo "%{$CRed%}$CROSS%{$CClear%}"
+    else
+        echo '$'
+    fi
 }
 
 GIT_PROMPT_PREFIX="%{$CGreen%} [%{$CClear%}"
 GIT_PROMPT_SUFFIX="%{$CGreen%}]%{$CClear%}"
+GIT_PROMPT_ORIGIN="%{$CYellow%}$PLUSMINUS%{$CClear%}"
 GIT_PROMPT_AHEAD="%{$CRed%}ANUM%{$CClear%}"
 GIT_PROMPT_BEHIND="%{$CLBlue%}BNUM%{$CClear%}"
-GIT_PROMPT_MERGING="%{$CMagenta ⚡︎%{$CClear%}"
+GIT_PROMPT_MERGING="%{$CMagenta%}$LIGHTNING%{$CClear%}"
 GIT_PROMPT_UNTRACKED="%{$CRed%}u%{$CClear%}"
 GIT_PROMPT_MODIFIED="%{$CYellow%}d%{$CCLear%}"
 GIT_PROMPT_STAGED="%{$CGreen%}s%{$CClear%}"
@@ -26,11 +40,16 @@ function parse_git_state() {
   local GIT_STATE=""
 
   local NUM_AHEAD="$(git log --oneline @{u}.. 2> /dev/null | wc -l | tr -d ' ')"
+  local NUM_BEHIND="$(git log --oneline ..@{u} 2> /dev/null | wc -l | tr -d ' ')"
+  
+  if [ "$NUM_AHEAD" -gt 0 ] || [ "$NUM_BEHIND" -gt 0 ]; then
+      GIT_STATE=$GIT_STATE$GIT_PROMPT_ORIGIN
+  fi
+
   if [ "$NUM_AHEAD" -gt 0 ]; then
     GIT_STATE=$GIT_STATE${GIT_PROMPT_AHEAD//NUM/$NUM_AHEAD}
   fi
 
-  local NUM_BEHIND="$(git log --oneline ..@{u} 2> /dev/null | wc -l | tr -d ' ')"
   if [ "$NUM_BEHIND" -gt 0 ]; then
     GIT_STATE=$GIT_STATE${GIT_PROMPT_BEHIND//NUM/$NUM_BEHIND}
   fi
@@ -76,6 +95,4 @@ zle -N zle-line-init
 zle -N zle-keymap-select
 export KEYTIMEOUT=1
 
-#PROMPT='$CLGreen%n%\@%m$CClear:$CLBlue%~$CClear$(prompt_char) '
 PROMPT='%{$CLGreen%}%n%\@%m%{$CClear%}:%{$CLBlue%}%~%{$CClear%}$(prompt_char) '
-#RPROMPT='$(vim_prompt_string)$(git_prompt_string)'
