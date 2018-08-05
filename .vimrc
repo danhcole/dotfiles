@@ -62,3 +62,11 @@ autocmd FileType help setlocal nospell
 autocmd FileType ruby set softtabstop=2
 autocmd FileType ruby set sw=2
 autocmd FileType ruby set ts=2 
+
+" highlight extranious whitespace
+highlight ExtraWhitespace ctermbg=red guibg=red
+match ExtraWhitespace /\s\+$/
+autocmd BufWinEnter * match ExtraWhitespace /\s\+$/
+autocmd InsertEnter * match ExtraWhitespace /\s\+\%#\@<!$/
+autocmd InsertLeave * match ExtraWhitespace /\s\+$/
+autocmd BufWinLeave * call clearmatches()
