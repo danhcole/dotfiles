@@ -28,3 +28,6 @@ alias gf='git reflog'
 alias gv='git log --pretty=format:'%s' | cut -d " " -f 1 | sort | uniq -c | sort -nr'
 alias gsh="git shortlog | grep -E '^[ ]+\w+' | wc -l"
 alias gu="git shortlog | grep -E '^[^ ]'"
+
+# Common dirs
+alias gosre="cd ~/go/src/github.com/xgen-cloud/gosre"
