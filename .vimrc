@@ -32,6 +32,7 @@ else
 endif
 
 set runtimepath+=~/dotfiles/vim
+set encoding=utf-8
 
 " Color Scheme
 colo monokai
@@ -49,7 +50,7 @@ set shiftwidth=4
 set tabstop=4
 set expandtab
 
-" 
+"
 autocmd FileType make setlocal noexpandtab
 
 " Set text-file specific options
@@ -61,7 +62,7 @@ autocmd FileType help setlocal nospell
 " set tabstops for ruby
 autocmd FileType ruby set softtabstop=2
 autocmd FileType ruby set sw=2
-autocmd FileType ruby set ts=2 
+autocmd FileType ruby set ts=2
 
 " highlight extranious whitespace
 highlight ExtraWhitespace ctermbg=red guibg=red
@@ -74,3 +75,20 @@ autocmd BufWinLeave * call clearmatches()
 " sane splits
 set splitright
 set splitbelow
+
+set updatetime=100
+
+" nerdtree -- https://github.com/scrooloose/nerdtree
+map <C-n> :NERDTreeToggle<CR>
+
+" airline
+let g:airline#extensions#tabline#enabled = 0
+let g:airline#extensions#tabline#show_splits = 0
+let g:airline#extensions#tabline#show_buffers = 0
+let g:airline#extensions#tabline#tabs_label = ' '
+"let g:airline#extensions#tabline#left_sep = ' '
+"let g:airline#extensions#tabline#left_alt_sep = '|'
+let g:airline_powerline_fonts = 1
+
+" https://github.com/vim-airline/vim-airline/issues/1369#issuecomment-277855901
+let g:airline_section_x = '%{&filetype}'
