@@ -80,6 +80,7 @@ set updatetime=100
 
 " nerdtree -- https://github.com/scrooloose/nerdtree
 map <C-n> :NERDTreeToggle<CR>
+let g:NERDTreeNodeDelimiter = "\u00a0"
 
 " airline
 let g:airline#extensions#tabline#enabled = 0
