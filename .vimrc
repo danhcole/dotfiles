@@ -64,6 +64,11 @@ autocmd FileType ruby set softtabstop=2
 autocmd FileType ruby set sw=2
 autocmd FileType ruby set ts=2
 
+" set tabstops for YAML
+autocmd FileType yaml set softtabstop=2
+autocmd FileType yaml set sw=2
+autocmd FileType yaml set ts=2
+
 " highlight extranious whitespace
 highlight ExtraWhitespace ctermbg=red guibg=red
 match ExtraWhitespace /\s\+$/
@@ -83,7 +88,7 @@ map <C-n> :NERDTreeToggle<CR>
 let g:NERDTreeNodeDelimiter = "\u00a0"
 
 " airline
-let g:airline#extensions#tabline#enabled = 0
+let g:airline#extensions#tabline#enabled = 1
 let g:airline#extensions#tabline#show_splits = 0
 let g:airline#extensions#tabline#show_buffers = 0
 let g:airline#extensions#tabline#tabs_label = ' '
@@ -93,3 +98,7 @@ let g:airline_powerline_fonts = 1
 
 " https://github.com/vim-airline/vim-airline/issues/1369#issuecomment-277855901
 let g:airline_section_x = '%{&filetype}'
+
+" vim-terraform
+let g:terraform_align=1
+let g:terraform_fmt_on_save=1
