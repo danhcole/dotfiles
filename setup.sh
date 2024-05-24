@@ -30,17 +30,17 @@ if [[ -d ~/.zsh && ! -L ~/.zsh ]]; then
 fi
 
 echo "Linking .rc files..."
-if [[ ! -e ~/.bashrc ]]; then ln -s ~/dotfiles/.bashrc ~/.bashrc; fi
-if [[ ! -e ~/.vimrc ]]; then ln -s ~/dotfiles/.vimrc ~/.vimrc; fi
-if [[ ! -e ~/.zshrc ]]; then ln -s ~/dotfiles/.zshrc ~/.zshrc; fi
+if [[ ! -e ~/.bashrc ]]; then ln -s ~/git/danhcole/dotfiles/.bashrc ~/.bashrc; fi
+if [[ ! -e ~/.vimrc ]]; then ln -s ~/git/danhcole/dotfiles/.vimrc ~/.vimrc; fi
+if [[ ! -e ~/.zshrc ]]; then ln -s ~/git/danhcole/dotfiles/.zshrc ~/.zshrc; fi
 
 echo "Linking shell shell config files..."
-if [[ ! -e ~/.sh ]]; then ln -s ~/dotfiles/sh ~/.sh; fi
-if [[ ! -e ~/.bash ]]; then ln -s ~/dotfiles/bash/ ~/.bash; fi
-if [[ ! -e ~/.zsh ]]; then ln -s ~/dotfiles/zsh ~/.zsh; fi
+if [[ ! -e ~/.sh ]]; then ln -s ~/git/danhcole/dotfiles/sh ~/.sh; fi
+if [[ ! -e ~/.bash ]]; then ln -s ~/git/danhcole/dotfiles/bash/ ~/.bash; fi
+if [[ ! -e ~/.zsh ]]; then ln -s ~/git/danhcole/dotfiles/zsh ~/.zsh; fi
 
 echo "Linking vim environment..."
-if [[ ! -e ~/.vim ]]; then ln -s ~/dotfiles/vim ~/.vim; fi
+if [[ ! -e ~/.vim ]]; then ln -s ~/git/danhcole/dotfiles/vim ~/.vim; fi
 
 echo ""
 echo "done"
