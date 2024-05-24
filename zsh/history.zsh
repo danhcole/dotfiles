@@ -1,3 +1,4 @@
-HISTSIZE=10000
-SAVEHIST=9000
+alias history="history 0"
+HISTSIZE=100000
+SAVEHIST=90000
 HISTFILE=~/.zsh_history

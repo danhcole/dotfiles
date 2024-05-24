@@ -28,7 +28,8 @@ function ssr {
 }
 
 function myip {
-    curl -s https://canihazip.com | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
+    #curl -s https://canihazip.com | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
+    curl -s https://ifconfig.io
 }
 
 function bkp {
@@ -41,4 +42,8 @@ function fdiff {
     else
         diff -y -W $COLUMNS $1 $2 | less -R
     fi
+}
+
+function realpath {
+    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
 }

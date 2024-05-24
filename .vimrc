@@ -31,11 +31,11 @@ else
 
 endif
 
-set runtimepath+=~/dotfiles/vim
+set runtimepath+=~/git/danhcole/dotfiles/vim
 set encoding=utf-8
 
 " Color Scheme
-colo monokai
+colo monokai_pro
 
 " Line Numbers
 set number
@@ -68,6 +68,14 @@ autocmd FileType ruby set ts=2
 autocmd FileType yaml set softtabstop=2
 autocmd FileType yaml set sw=2
 autocmd FileType yaml set ts=2
+autocmd FileType yml set softtabstop=2
+autocmd FileType yml set sw=2
+autocmd FileType yml set ts=2
+
+" set tabstops for json
+autocmd FileType json set softtabstop=2
+autocmd FileType json set sw=2
+autocmd FileType json set ts=2
 
 " highlight extranious whitespace
 highlight ExtraWhitespace ctermbg=red guibg=red
@@ -82,6 +90,9 @@ set splitright
 set splitbelow
 
 set updatetime=100
+
+" mouse scrolling
+set mouse=a
 
 " nerdtree -- https://github.com/scrooloose/nerdtree
 map <C-n> :NERDTreeToggle<CR>
@@ -102,3 +113,17 @@ let g:airline_section_x = '%{&filetype}'
 " vim-terraform
 let g:terraform_align=1
 let g:terraform_fmt_on_save=1
+
+let g:go_def_mode='gopls'
+let g:go_info_mode='gopls'
+
+" color column at 80 chars
+if exists('+colorcolumn')
+    set colorcolumn=80
+else
+    au BufWinEnter * call matchadd('ErrorMsg', '\%>80v.\+', -1)
+endif
+autocmd InsertLeave * redraw!
+
+" gitgutter for large diffs
+let g:gitgutter_max_signs = 750
