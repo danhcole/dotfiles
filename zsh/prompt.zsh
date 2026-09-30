@@ -95,4 +95,4 @@ zle -N zle-line-init
 zle -N zle-keymap-select
 export KEYTIMEOUT=1
 
-PROMPT='%{$CLGreen%}%n%\@%m%{$CClear%}:%{$CLBlue%}%~%{$CClear%}$(prompt_char) '
+PROMPT='%{$CLGreen%}%n%\@banks%{$CClear%}:%{$CLBlue%}%~%{$CClear%}$(prompt_char) '

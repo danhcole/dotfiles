@@ -14,7 +14,7 @@ source ~/.zsh/checks.zsh
 source ~/.zsh/colors.zsh
 source ~/.zsh/setopt.zsh
 source ~/.zsh/exports.zsh
-source ~/.zsh/prompt.zsh
+#source ~/.zsh/prompt.zsh
 source ~/.zsh/aliases.zsh
 source ~/.zsh/bindkeys.zsh
 source ~/.zsh/functions.zsh
@@ -39,8 +39,16 @@ for _cmd in nvm node npm npx; do
 done
 unset _cmd
 
-# fzr
+# fzf
 # diable if atuin is installed
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
+
+# starship
+eval "$(starship init zsh)"
+export STARSHIP_CONFIG=~/.config/starship/starship.toml
+
+# wt (git worktrees)
+if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
+export PATH="/Users/danhcole/.local/bin:$PATH"
