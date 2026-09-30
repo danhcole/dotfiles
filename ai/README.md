@@ -9,7 +9,7 @@ call them directly.
 ## Layout
 
 ```
-models.toml          tier -> model map, per harness (committed)
+models.toml          tier/agent -> model map, per harness (committed)
 models.local.toml    per-machine overrides (gitignored)
 rules/base.md        global instructions, loaded by every harness
 skills/wintermute/   the router; its skill table is generated at build time
@@ -65,8 +65,26 @@ name: explain
 description: What it does. Use when ... (used for triggering and the router table)
 tier: balanced
 when: [hints for bare /wintermute, e.g. uncommitted changes]
+agents: [helper-one, helper-two]   # optional; see "Helper agents"
 ---
 ```
+
+## Helper agents
+
+A skill can declare extra subagents it dispatches at runtime with `agents: [...]`.
+Each name is resolved through `models.toml` `[agents.<name>]` (per harness, like
+tiers) and its body comes from `<skill>/reviewer.md` (falling back to a generic
+reviewer prompt). The build emits one subagent per name, hidden from the `@`
+menu, with `edit` denied; the owning skill's subagent gets `task` permission to
+invoke them. Harnesses without subagents (chat UIs, single-model agents) simply
+do the work inline.
+
+The `review` skill is the reference: `wt-review` triages the change, then either
+dispatches one `review-quick` reviewer (small change) or the cross-vendor panel
+`review-claude` / `review-gpt` / `review-deepseek` (large, cross-cutting change),
+verifies their findings, and synthesizes one report. `/code-review` forces the
+panel. On claude-code/zed the gpt/deepseek reviewers degrade to distinct
+Anthropic models.
 
 Write instructions as what to do ("run git diff"), not which tool to use, so
 they work in every harness. Supporting files in the skill directory are copied

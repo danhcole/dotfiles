@@ -28,3 +28,35 @@ claude-code = "fable"
 claude-ui   = "Fable"
 opencode    = "anthropic/claude-fable-5-1"
 zed         = { provider = "anthropic", model = "claude-fable-5-1" }
+
+# Helper agents declared by skills via `agents: [...]` in their frontmatter,
+# keyed by agent name. The review skill uses these: `review-quick` is the single
+# reviewer for small changes; `review-claude`/`review-gpt`/`review-deepseek` form
+# the panel for large, cross-cutting changes. Independence is the point, so the
+# opencode panel is cross-vendor. Harnesses that can only run Anthropic models
+# (claude-code, zed) degrade the gpt/deepseek reviewers to distinct Anthropic
+# models.
+
+[agents.review-quick]
+claude-code = "sonnet"
+claude-ui   = "Sonnet"
+opencode    = "anthropic/claude-sonnet-5-5"
+zed         = { provider = "anthropic", model = "claude-sonnet-5-5" }
+
+[agents.review-claude]
+claude-code = "opus"
+claude-ui   = "Opus"
+opencode    = "github-copilot/claude-opus-5"
+zed         = { provider = "anthropic", model = "claude-opus-5-5" }
+
+[agents.review-gpt]
+claude-code = "sonnet"
+claude-ui   = "Sonnet"
+opencode    = "github-copilot/gpt-6-sol"
+zed         = { provider = "anthropic", model = "claude-sonnet-5-5" }
+
+[agents.review-deepseek]
+claude-code = "haiku"
+claude-ui   = "Haiku"
+opencode    = "fireworks-ai/accounts/fireworks/models/deepseek-v4p1-flash"
+zed         = { provider = "anthropic", model = "claude-haiku-4-5" }

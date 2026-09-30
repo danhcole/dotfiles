@@ -69,6 +69,16 @@ def resolve(models, local, tier, harness):
     return tiers[tier][harness], ("tiers", tier, harness) in local
 
 
+def resolve_agent(models, local, name, harness):
+    """Return (model, from_local) for a skill's helper agent on a harness."""
+    agents = models.get("agents", {})
+    if name not in agents:
+        die(f"unknown agent '{name}' (known: {', '.join(agents)})")
+    if harness not in agents[name]:
+        die(f"agent '{name}' has no model for harness '{harness}'")
+    return agents[name][harness], ("agents", name, harness) in local
+
+
 def show(model):
     if isinstance(model, dict):
         return f"{model.get('provider')}/{model.get('model')}"
@@ -125,7 +135,10 @@ def out_name(name, prefix):
 
 
 def frontmatter(fields):
-    lines = [f"{k}: {json.dumps(v) if isinstance(v, str) else v}" for k, v in fields.items()]
+    # JSON is valid YAML, so strings, lists, dicts, and bools all serialize
+    # safely (dicts cover nested fields like `permission:`).
+    lines = [f"{k}: {json.dumps(v) if isinstance(v, (str, dict, list, bool)) else v}"
+             for k, v in fields.items()]
     return "---\n" + "\n".join(lines) + "\n---\n"
 
 
@@ -148,8 +161,37 @@ def render_body(name, body, skills, models, local, harness, prefix):
 
 
 def copy_skill(src, dest):
-    """Copy a skill directory, minus its SKILL.md / template (written separately)."""
-    shutil.copytree(src, dest, ignore=shutil.ignore_patterns("SKILL.md", "SKILL.md.tmpl", ".DS_Store"))
+    """Copy a skill directory, minus its SKILL.md / template (written separately)
+    and its helper-agent body (rendered into agents separately)."""
+    shutil.copytree(src, dest, ignore=shutil.ignore_patterns(
+        "SKILL.md", "SKILL.md.tmpl", "reviewer.md", ".DS_Store"))
+
+
+DEFAULT_REVIEWER_BODY = (
+    "You are a senior code reviewer performing an independent, single-pass review.\n"
+    "Report findings only; never modify code. Cite `path:line` with concrete\n"
+    "evidence, state why each issue matters, and propose a specific fix. Prefer\n"
+    "few high-confidence findings. Rank Critical / High / Medium / Low and omit\n"
+    "empty bands.\n")
+
+
+def write_helper_agent(src, name, models, local, harness, agents_dir):
+    """Emit one helper subagent for a skill's `agents:` list. The model comes
+    from models.toml `[agents.<name>]`; the body from the skill's reviewer.md,
+    falling back to a generic reviewer prompt."""
+    model, _ = resolve_agent(models, local, name, harness)
+    body_file = src / "reviewer.md"
+    body = body_file.read_text() if body_file.exists() else DEFAULT_REVIEWER_BODY
+    label = name.removeprefix("review-").replace("-", " ").title() or name
+    desc = f"Independent code reviewer ({label}). Dispatched by the review skill."
+    if harness == "claude-code":
+        fields = {"name": name, "description": desc, "model": model,
+                  "tools": "Read, Grep, Glob, Bash"}
+    else:
+        fields = {"description": desc, "mode": "subagent", "model": model,
+                  "hidden": True, "permission": {"edit": "deny"}}
+    agents_dir.mkdir(parents=True, exist_ok=True)
+    (agents_dir / f"{name}.md").write_text(frontmatter(fields) + "\n" + body)
 
 
 # --- renderers ---------------------------------------------------------------
@@ -164,6 +206,8 @@ def build_claude_code(skills, models, local, prefix, out):
         text = render_body(name, body, skills, models, local, "claude-code", prefix)
         (dest / "SKILL.md").write_text(
             frontmatter({"name": n, "description": meta["description"], "model": model}) + text)
+        for helper in meta.get("agents", []):
+            write_helper_agent(src, helper, models, local, "claude-code", out / "agents")
     shutil.copy(RULES, out / "rules.md")
     (out / "session-start.txt").write_text(SESSION_START + "\n")
 
@@ -184,9 +228,15 @@ def build_opencode(skills, models, local, prefix, out):
         if name == ROUTER or meta.get("inline"):
             continue
         model, _ = resolve(models, local, meta["tier"], "opencode")
+        helpers = meta.get("agents", [])
+        fields = {"description": meta["description"], "mode": "subagent", "model": model}
+        if helpers:
+            fields["permission"] = {"task": {h: "allow" for h in helpers}}
         (agents / f"{n}.md").write_text(
-            frontmatter({"description": meta["description"], "mode": "subagent", "model": model})
+            frontmatter(fields)
             + f"\nLoad the `{n}` skill and follow it for the task you were given.\n")
+        for helper in helpers:
+            write_helper_agent(src, helper, models, local, "opencode", agents)
     shutil.copy(RULES, out / "AGENTS.md")
 
 
@@ -293,6 +343,8 @@ def install(harness, prefix, hook):
     print(f"built {out}")
     if harness == "claude-code":
         link_all(out / "skills", CLAUDE_DIR / "skills")
+        if (out / "agents").exists():
+            link_all(out / "agents", CLAUDE_DIR / "agents")
         append_line(CLAUDE_DIR / "CLAUDE.md", f"@{out / 'rules.md'}")
         if hook:
             install_hook(out)
