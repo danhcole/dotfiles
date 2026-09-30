@@ -6,7 +6,7 @@ echo ""
 echo "Setting up dotfiles..."
 echo ""
 
-if [[ -n $DOTFILE_BACKUP ]]
+if [[ -n $DOTFILE_BACKUP ]]; then
     echo "Backing up old dotfiles..."
 
     if [[ -f ~/.bashrc && ! -L ~/.bashrc ]]; then
@@ -44,6 +44,10 @@ if [[ ! -e ~/.zsh ]]; then ln -s ~/git/danhcole/dotfiles/zsh ~/.zsh; fi
 
 echo "Linking vim environment..."
 if [[ ! -e ~/.vim ]]; then ln -s ~/git/danhcole/dotfiles/vim ~/.vim; fi
+
+echo "Linking wintermute..."
+mkdir -p ~/.local/bin
+if [[ ! -e ~/.local/bin/wintermute ]]; then ln -s ~/git/danhcole/dotfiles/ai/bin/wintermute ~/.local/bin/wintermute; fi
 
 echo ""
 echo "done"

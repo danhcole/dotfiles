@@ -1,0 +1,30 @@
+# Tier -> model map. Skills name a tier, never a model.
+# Per-machine overrides (e.g. a work model set) go in models.local.toml next to
+# this file; it is gitignored and deep-merged over this one, key by key.
+#
+# Harness keys:
+#   claude-code  alias or full model id (aliases float to the latest model)
+#   claude-ui    display name; advisory only, the UI can't pin a model per skill
+#   opencode     provider/model-id
+#   zed          { provider, model }
+
+[tiers.fast]
+description = "quick and cheap: commit messages, summaries, routing, formatting"
+claude-code = "sonnet"
+claude-ui   = "Sonnet"
+opencode    = "anthropic/claude-sonnet-5-5"
+zed         = { provider = "anthropic", model = "claude-sonnet-5-5" }
+
+[tiers.balanced]
+description = "everyday coding, explaining, refactoring"
+claude-code = "opus"
+claude-ui   = "Opus"
+opencode    = "anthropic/claude-opus-5-5"
+zed         = { provider = "anthropic", model = "claude-opus-5-5" }
+
+[tiers.deep]
+description = "review, planning, hard debugging"
+claude-code = "fable"
+claude-ui   = "Fable"
+opencode    = "anthropic/claude-fable-5-1"
+zed         = { provider = "anthropic", model = "claude-fable-5-1" }

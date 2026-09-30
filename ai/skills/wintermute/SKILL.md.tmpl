@@ -1,0 +1,36 @@
+---
+name: wintermute
+description: Entry point for engineering tasks. Takes a goal (or nothing) and routes it to the right wintermute sub-skill. Use for any non-trivial engineering task, or when the user says "wintermute" or "wt".
+tier: fast
+---
+# wintermute
+
+You are a router. Pick one sub-skill for the user's goal and hand off to it.
+Don't do the task yourself.
+
+## Sub-skills
+
+{{table}}
+
+## Routing
+
+1. **Exact name.** If the input starts with a sub-skill name (e.g. `review`),
+   use that sub-skill. Pass the rest of the input along as its goal.
+2. **Stated goal.** Otherwise, match the goal against the descriptions above
+   and pick the best fit.
+3. **Ambiguous.** If two or three fit about equally well, name them with a
+   one-line reason each and ask which one to use. If none fit, say so and stop.
+4. **No goal.** If the input is empty, run `lib/context.sh` (in this skill's
+   directory). Compare its output with the "when" hints above and suggest the
+   best match. Wait for confirmation before running it.
+5. **help.** If the input is `help`, print the table above and stop.
+
+## Hand-off
+
+Say which sub-skill you picked in one line, e.g. "Routing to **{{prefix}}review**:
+uncommitted changes on `feat/x`."
+
+Then:
+- If a subagent named `{{prefix}}<name>` is available, delegate to it with the
+  user's goal. It's pinned to the right model for the job.
+- Otherwise, invoke the `{{prefix}}<name>` skill and follow it.

@@ -46,3 +46,8 @@ alias aws-relog="aws sso login --profile sre-sso; aws sso login --profile gov"
 alias mongod="mongod --dbpath ~/.mongodb/data"
 
 alias kpv="kubectl get pods -o json | jq '.items[].metadata | \"\\(.labels.xgen_app) \\(.labels.\"app.kubernetes.io/version\")\"'"
+
+# python 2/3
+alias python2="/usr/local/bin/python"
+alias python="python3"
+alias pip="pip3"

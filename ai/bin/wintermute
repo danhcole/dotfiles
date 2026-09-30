@@ -1,0 +1,400 @@
+#!/usr/bin/env python3
+"""wintermute: build and install a harness-independent skill stack.
+
+Skills live in ai/skills/<name>/SKILL.md and declare a capability tier
+(fast | balanced | deep). models.toml (plus an optional, gitignored
+models.local.toml) maps each tier to a concrete model per harness.
+"""
+import argparse
+import json
+import re
+import shutil
+import sys
+
+if sys.version_info < (3, 11):
+    sys.exit(f"wintermute: needs Python 3.11+ (for tomllib), got {sys.version.split()[0]} "
+             f"at {sys.executable}")
+
+import tomllib
+import zipfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+SKILLS = ROOT / "skills"
+DIST = ROOT / "dist"
+RULES = ROOT / "rules" / "base.md"
+ROUTER = "wintermute"
+HARNESSES = ["claude-code", "claude-ui", "opencode", "zed"]
+HOME = Path.home()
+CLAUDE_DIR = HOME / ".claude"
+OPENCODE_DIR = HOME / ".config" / "opencode"
+SESSION_START = "For non-trivial engineering tasks, start with the `wintermute` skill."
+
+
+def die(msg):
+    sys.exit(f"wintermute: {msg}")
+
+
+# --- model map ---------------------------------------------------------------
+
+def merge(base, over, local, path=()):
+    """Deep-merge `over` into `base`, recording overridden key paths in `local`."""
+    for key, val in over.items():
+        if isinstance(val, dict) and isinstance(base.get(key), dict) and key != "zed":
+            merge(base[key], val, local, path + (key,))
+        else:
+            base[key] = val
+            local.add(path + (key,))
+    return base
+
+
+def load_models():
+    with open(ROOT / "models.toml", "rb") as f:
+        models = tomllib.load(f)
+    local = set()
+    local_file = ROOT / "models.local.toml"
+    if local_file.exists():
+        with open(local_file, "rb") as f:
+            merge(models, tomllib.load(f), local)
+    return models, local
+
+
+def resolve(models, local, tier, harness):
+    """Return (model, from_local) for a tier on a harness."""
+    tiers = models.get("tiers", {})
+    if tier not in tiers:
+        die(f"unknown tier '{tier}' (known: {', '.join(tiers)})")
+    if harness not in tiers[tier]:
+        die(f"tier '{tier}' has no model for harness '{harness}'")
+    return tiers[tier][harness], ("tiers", tier, harness) in local
+
+
+def show(model):
+    if isinstance(model, dict):
+        return f"{model.get('provider')}/{model.get('model')}"
+    return str(model)
+
+
+# --- skills ------------------------------------------------------------------
+
+FRONTMATTER = re.compile(r"\A---\n(.*?)\n---\n?(.*)\Z", re.S)
+
+
+def parse_value(raw):
+    raw = raw.strip()
+    if raw.startswith("[") and raw.endswith("]"):
+        return [parse_value(v) for v in raw[1:-1].split(",") if v.strip()]
+    if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in "\"'":
+        return raw[1:-1]
+    return raw
+
+
+def read_skill(path):
+    """Parse a SKILL.md (or template) into (meta, body). Supports flat
+    `key: value` and `key: [a, b]` frontmatter only."""
+    m = FRONTMATTER.match(path.read_text())
+    if not m:
+        die(f"{path}: missing frontmatter")
+    meta = {}
+    for line in m.group(1).splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        key, sep, val = line.partition(":")
+        if not sep:
+            die(f"{path}: can't parse frontmatter line: {line}")
+        meta[key.strip()] = parse_value(val)
+    for field in ("name", "description", "tier"):
+        if field not in meta:
+            die(f"{path}: frontmatter is missing '{field}'")
+    return meta, m.group(2)
+
+
+def load_skills():
+    """Return {name: (dir, meta, body)} with the router first."""
+    skills = {}
+    router = SKILLS / ROUTER / "SKILL.md.tmpl"
+    skills[ROUTER] = (router.parent, *read_skill(router))
+    for d in sorted(SKILLS.iterdir()):
+        if d.name != ROUTER and (d / "SKILL.md").exists():
+            skills[d.name] = (d, *read_skill(d / "SKILL.md"))
+    return skills
+
+
+def out_name(name, prefix):
+    return name if name == ROUTER else prefix + name
+
+
+def frontmatter(fields):
+    lines = [f"{k}: {json.dumps(v) if isinstance(v, str) else v}" for k, v in fields.items()]
+    return "---\n" + "\n".join(lines) + "\n---\n"
+
+
+def router_table(skills, models, local, harness, prefix):
+    rows = ["| skill | tier | use for | when |", "|---|---|---|---|"]
+    for name, (_, meta, _) in skills.items():
+        if name == ROUTER:
+            continue
+        model, _ = resolve(models, local, meta["tier"], harness)
+        when = ", ".join(meta.get("when", [])) or "-"
+        rows.append(f"| `{prefix}{name}` | {meta['tier']} ({show(model)}) | {meta['description']} | {when} |")
+    return "\n".join(rows)
+
+
+def render_body(name, body, skills, models, local, harness, prefix):
+    if name == ROUTER:
+        body = body.replace("{{table}}", router_table(skills, models, local, harness, prefix))
+        body = body.replace("{{prefix}}", prefix)
+    return body
+
+
+def copy_skill(src, dest):
+    """Copy a skill directory, minus its SKILL.md / template (written separately)."""
+    shutil.copytree(src, dest, ignore=shutil.ignore_patterns("SKILL.md", "SKILL.md.tmpl", ".DS_Store"))
+
+
+# --- renderers ---------------------------------------------------------------
+
+def build_claude_code(skills, models, local, prefix, out):
+    """Skills with `model:` set from the tier, plus rules and a SessionStart line."""
+    for name, (src, meta, body) in skills.items():
+        n = out_name(name, prefix)
+        model, _ = resolve(models, local, meta["tier"], "claude-code")
+        dest = out / "skills" / n
+        copy_skill(src, dest)
+        text = render_body(name, body, skills, models, local, "claude-code", prefix)
+        (dest / "SKILL.md").write_text(
+            frontmatter({"name": n, "description": meta["description"], "model": model}) + text)
+    shutil.copy(RULES, out / "rules.md")
+    (out / "session-start.txt").write_text(SESSION_START + "\n")
+
+
+def build_opencode(skills, models, local, prefix, out):
+    """Subagents pinned to each tier's model; they load the matching skill.
+    Also builds skills for machines without Claude Code (opencode reads
+    ~/.claude/skills itself when it exists)."""
+    agents = out / "agents"
+    agents.mkdir(parents=True)
+    for name, (src, meta, body) in skills.items():
+        n = out_name(name, prefix)
+        dest = out / "skills" / n
+        copy_skill(src, dest)
+        text = render_body(name, body, skills, models, local, "opencode", prefix)
+        (dest / "SKILL.md").write_text(
+            frontmatter({"name": n, "description": meta["description"]}) + text)
+        if name == ROUTER:
+            continue
+        model, _ = resolve(models, local, meta["tier"], "opencode")
+        (agents / f"{n}.md").write_text(
+            frontmatter({"description": meta["description"], "mode": "subagent", "model": model})
+            + f"\nLoad the `{n}` skill and follow it for the task you were given.\n")
+    shutil.copy(RULES, out / "AGENTS.md")
+
+
+def build_claude_ui(skills, models, local, prefix, out):
+    """One zip per skill, with an advisory line naming the best model."""
+    out.mkdir(parents=True, exist_ok=True)
+    for name, (src, meta, body) in skills.items():
+        n = out_name(name, prefix)
+        model, _ = resolve(models, local, meta["tier"], "claude-ui")
+        text = render_body(name, body, skills, models, local, "claude-ui", prefix)
+        note = f"\n> {meta['tier']}-tier skill: best run on {show(model)}.\n"
+        skill_md = frontmatter({"name": n, "description": meta["description"]}) + note + text
+        with zipfile.ZipFile(out / f"{n}.zip", "w", zipfile.ZIP_DEFLATED) as z:
+            z.writestr(f"{n}/SKILL.md", skill_md)
+            for f in sorted(src.rglob("*")):
+                if f.is_file() and f.name not in ("SKILL.md", "SKILL.md.tmpl", ".DS_Store"):
+                    z.write(f, f"{n}/{f.relative_to(src)}")
+
+
+def build_zed(skills, models, local, prefix, out):
+    """Settings snippet mapping tiers to Zed's model slots, plus rules."""
+    out.mkdir(parents=True, exist_ok=True)
+    zed = {t: resolve(models, local, t, "zed")[0] for t in ("fast", "balanced")}
+    snippet = {
+        "agent": {
+            "default_model": zed["balanced"],
+            "inline_assistant_model": zed["balanced"],
+            "commit_message_model": zed["fast"],
+            "thread_summary_model": zed["fast"],
+        }
+    }
+    (out / "settings-snippet.json").write_text(json.dumps(snippet, indent=2) + "\n")
+    shutil.copy(RULES, out / "rules.md")
+
+
+RENDERERS = {
+    "claude-code": build_claude_code,
+    "claude-ui": build_claude_ui,
+    "opencode": build_opencode,
+    "zed": build_zed,
+}
+
+
+def build(harness, prefix):
+    models, local = load_models()
+    skills = load_skills()
+    out = DIST / harness
+    if out.exists():
+        shutil.rmtree(out)
+    out.mkdir(parents=True)
+    RENDERERS[harness](skills, models, local, prefix, out)
+    return out
+
+
+# --- install -----------------------------------------------------------------
+
+def link(src, dest):
+    """Symlink dest -> src. Replaces our own symlinks, never real files."""
+    if dest.is_symlink():
+        dest.unlink()
+    elif dest.exists():
+        print(f"  skip {dest}: exists and isn't a wintermute symlink")
+        return
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.symlink_to(src)
+    print(f"  {dest} -> {src}")
+
+
+def link_all(src_dir, dest_dir):
+    """Link every entry of src_dir into dest_dir and prune stale links into dist/."""
+    for src in sorted(src_dir.iterdir()):
+        link(src, dest_dir / src.name)
+    if dest_dir.exists():
+        for d in dest_dir.iterdir():
+            if d.is_symlink() and str(d.readlink()).startswith(str(DIST)) and not d.exists():
+                d.unlink()
+                print(f"  removed stale {d}")
+
+
+def append_line(path, line):
+    text = path.read_text() if path.exists() else ""
+    if line in text:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "a") as f:
+        f.write(("\n" if text and not text.endswith("\n") else "") + line + "\n")
+    print(f"  added to {path}: {line}")
+
+
+def install_hook(out):
+    settings_path = CLAUDE_DIR / "settings.json"
+    settings = json.loads(settings_path.read_text()) if settings_path.exists() else {}
+    command = f"cat {out / 'session-start.txt'}"
+    hooks = settings.setdefault("hooks", {}).setdefault("SessionStart", [])
+    if any(h.get("command") == command for entry in hooks for h in entry.get("hooks", [])):
+        return
+    hooks.append({"hooks": [{"type": "command", "command": command}]})
+    settings_path.write_text(json.dumps(settings, indent=2) + "\n")
+    print(f"  added SessionStart hook to {settings_path}")
+
+
+def install(harness, prefix, hook):
+    out = build(harness, prefix)
+    print(f"built {out}")
+    if harness == "claude-code":
+        link_all(out / "skills", CLAUDE_DIR / "skills")
+        append_line(CLAUDE_DIR / "CLAUDE.md", f"@{out / 'rules.md'}")
+        if hook:
+            install_hook(out)
+    elif harness == "opencode":
+        link_all(out / "agents", OPENCODE_DIR / "agents")
+        if not CLAUDE_DIR.exists():
+            link_all(out / "skills", OPENCODE_DIR / "skills")
+        link(out / "AGENTS.md", OPENCODE_DIR / "AGENTS.md")
+    elif harness == "claude-ui":
+        print("upload each zip in Claude: Settings > Capabilities > Skills")
+        for z in sorted(out.glob("*.zip")):
+            print(f"  {z}")
+    elif harness == "zed":
+        print("Zed's agent panel via claude-acp uses the claude-code install.")
+        print("For Zed's native agent, merge this into ~/.config/zed/settings.json:\n")
+        print((out / "settings-snippet.json").read_text())
+        print(f"and add {out / 'rules.md'} to Zed's Rules Library as a default rule.")
+
+
+# --- commands ----------------------------------------------------------------
+
+def cmd_list(args):
+    models, local = load_models()
+    skills = load_skills()
+    rows = [["skill", "tier", *HARNESSES]]
+    for name, (_, meta, _) in skills.items():
+        row = [out_name(name, args.prefix), meta["tier"]]
+        for h in HARNESSES:
+            model, is_local = resolve(models, local, meta["tier"], h)
+            row.append(show(model) + (" [local]" if is_local else ""))
+        rows.append(row)
+    widths = [max(len(r[i]) for r in rows) for i in range(len(rows[0]))]
+    for r in rows:
+        print("  ".join(c.ljust(w) for c, w in zip(r, widths)).rstrip())
+
+
+def cmd_resolve(args):
+    models, local = load_models()
+    for h in [args.harness] if args.harness else HARNESSES:
+        model, is_local = resolve(models, local, args.tier, h)
+        value = json.dumps(model) if isinstance(model, dict) else model
+        tag = " [local]" if is_local else ""
+        print(value + tag if args.harness else f"{h}: {value}{tag}")
+
+
+def cmd_build(args):
+    for h in HARNESSES if args.harness == "all" else [args.harness]:
+        print(f"built {build(h, args.prefix)}")
+
+
+def cmd_install(args):
+    for h in HARNESSES if args.harness == "all" else [args.harness]:
+        install(h, args.prefix, args.hook)
+
+
+def cmd_new(args):
+    models, _ = load_models()
+    if args.tier not in models.get("tiers", {}):
+        die(f"unknown tier '{args.tier}'")
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", args.name) or args.name == ROUTER:
+        die("skill names are lowercase letters, digits, and dashes")
+    dest = SKILLS / args.name / "SKILL.md"
+    if dest.exists():
+        die(f"{dest} already exists")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(f"""---
+name: {args.name}
+description: TODO what this does. Use when TODO.
+tier: {args.tier}
+when: []
+---
+# {args.name}
+
+TODO: instructions. Say what to do, not which tool to use ("run git diff",
+not "use the Bash tool"), so the skill works in every harness.
+""")
+    print(f"created {dest}")
+
+
+def main():
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--no-prefix", dest="prefix", action="store_const", const="", default="wt-",
+                        help="name sub-skills without the wt- prefix")
+    p = argparse.ArgumentParser(prog="wintermute", description=__doc__.splitlines()[0])
+    sub = p.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("list", parents=[common], help="skills with their tier and model per harness")
+    r = sub.add_parser("resolve", help="print the model for a tier")
+    r.add_argument("tier")
+    r.add_argument("--harness", choices=HARNESSES)
+    for name, help_ in (("build", "render into dist/<harness>"), ("install", "build and install")):
+        s = sub.add_parser(name, parents=[common], help=help_)
+        s.add_argument("harness", choices=HARNESSES + ["all"])
+        if name == "install":
+            s.add_argument("--hook", action="store_true",
+                           help="claude-code: add a SessionStart hook pointing at wintermute")
+    n = sub.add_parser("new", help="scaffold a sub-skill")
+    n.add_argument("name")
+    n.add_argument("--tier", required=True)
+    args = p.parse_args()
+    {"list": cmd_list, "resolve": cmd_resolve, "build": cmd_build,
+     "install": cmd_install, "new": cmd_new}[args.cmd](args)
+
+
+if __name__ == "__main__":
+    main()
