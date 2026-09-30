@@ -11,6 +11,7 @@ source ~/.zsh/checks.zsh
 source ~/.zsh/colors.zsh
 source ~/.zsh/setopt.zsh
 source ~/.zsh/exports.zsh
+source ~/.zsh/exports.local.zsh
 source ~/.zsh/prompt.zsh
 source ~/.zsh/aliases.zsh
 source ~/.zsh/bindkeys.zsh

@@ -4,3 +4,4 @@ vim/.netrwhist
 vim/bundle/*
 ai/dist/
 ai/models.local.toml
+sh/exports.local.sh
