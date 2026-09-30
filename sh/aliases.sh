@@ -34,6 +34,8 @@ alias gca="git commit --amend"
 # Common dirs
 alias gosre="cd ~/git/xgen-cloud/gosre"
 alias tf="cd ~/git/xgen-cloud/gosre/ops/terraform"
+alias helixdocs="cd ~/git/xgen-cloud/gosre/js/helixdocs"
+alias sredocs="cd ~/git/xgen-cloud/gosre/js/sredocs"
 
 # neovim
 if [[ $(which nvim) ]]; then
@@ -41,7 +43,7 @@ if [[ $(which nvim) ]]; then
     alias vimdiff='nvim -d'
 fi
 
-alias aws-relog="aws sso login --profile sre-sso; aws sso login --profile gov"
+alias aws-relog="aws sso login --profile sre-sso; aws sso login --profile gov; aws sso login --profile sre-sso"
 
 alias mongod="mongod --dbpath ~/.mongodb/data"
 

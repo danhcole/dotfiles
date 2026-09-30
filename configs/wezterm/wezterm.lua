@@ -38,12 +38,27 @@ config.font_rules = {
 
 
 -- Color Schemes
--- config.color_scheme = 'Monokai Soda'
 -- config.color_scheme = 'Monokai Remastered'
-config.color_scheme = 'Molokai'
+-- config.color_scheme = 'MaterialDarker'
+-- config.color_scheme = 'Mathias'
+-- config.color_scheme = 'Modus Vivendi (Gogh)'
+-- config.color_scheme = 'Abernathy'
+-- config.color_scheme = 'SpaceGray Eighties'
+config.color_scheme = 'Paul Millr (Gogh)'
+
 config.inactive_pane_hsb = {
   saturation = 0.6,
-  brightness = 0.2,
+  brightness = 0.3,
+}
+
+-- scrolling
+config.scrollback_lines = 100000
+config.enable_scroll_bar = true
+config.window_padding = {
+  left = 5,
+  right = 20,
+  top = 5,
+  bottom = 0,
 }
 
 -- Key Bindings

@@ -16,5 +16,5 @@ export USE_GKE_GCLOUD_AUTH_PLUGIN=True
 export WEZTERM_CONFIG_DIR=$HOME/.config/wezterm
 export WEZTERM_CONFIG_FILE=$HOME/.config/wezterm/wezterm.lua
 
-export VCPKG_ROOT=~/vcpkg
-export VULKAN_SDK=~/VulkanSDK/1.4.350.1/macOS
+# Kube
+export KUBECONFIG="/Users/danhcole/git/xgen-cloud/kube-resources/.kube/config:/Users/danhcole/git/xgen-cloud/kube-resources/.kube/rmckubeconfig:/Users/danhcole/git/xgen-cloud/kube-resources/.kube/slskubeconfig:/Users/danhcole/.kube/config"

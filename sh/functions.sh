@@ -47,3 +47,7 @@ function fdiff {
 function realpath {
     [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
 }
+
+function conver {
+    aws ecr describe-images --repository-name sre/$1 --query "sort_by(imageDetails[?artifactMediaType!='application/vnd.cncf.notary.signature'], &imagePushedAt)[-1].imageTags[0]" --output text --profile sre-sso
+}
