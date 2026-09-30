@@ -72,6 +72,10 @@ Write instructions as what to do ("run git diff"), not which tool to use, so
 they work in every harness. Supporting files in the skill directory are copied
 along.
 
+Add `inline: true` for a skill that must run in the current conversation
+(something that restates or continues the chat). It's invoked directly instead
+of through a model-pinned subagent, so it keeps the context it needs.
+
 ## Installing
 
 ```bash

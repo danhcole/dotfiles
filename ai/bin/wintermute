@@ -181,7 +181,7 @@ def build_opencode(skills, models, local, prefix, out):
         text = render_body(name, body, skills, models, local, "opencode", prefix)
         (dest / "SKILL.md").write_text(
             frontmatter({"name": n, "description": meta["description"]}) + text)
-        if name == ROUTER:
+        if name == ROUTER or meta.get("inline"):
             continue
         model, _ = resolve(models, local, meta["tier"], "opencode")
         (agents / f"{n}.md").write_text(
