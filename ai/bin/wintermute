@@ -7,6 +7,7 @@ models.local.toml) maps each tier to a concrete model per harness.
 """
 import argparse
 import json
+import os
 import re
 import shutil
 import sys
@@ -28,6 +29,7 @@ HARNESSES = ["claude-code", "claude-ui", "opencode", "zed"]
 HOME = Path.home()
 CLAUDE_DIR = HOME / ".claude"
 OPENCODE_DIR = HOME / ".config" / "opencode"
+ZED_SKILLS_DIR = HOME / ".agents" / "skills"
 SESSION_START = "For non-trivial engineering tasks, start with the `wintermute` skill."
 
 
@@ -257,8 +259,18 @@ def build_claude_ui(skills, models, local, prefix, out):
 
 
 def build_zed(skills, models, local, prefix, out):
-    """Settings snippet mapping tiers to Zed's model slots, plus rules."""
+    """Native Agent Skills, model settings, and rules for Zed."""
     out.mkdir(parents=True, exist_ok=True)
+    for name, (src, meta, body) in skills.items():
+        n = out_name(name, prefix)
+        dest = out / "skills" / n
+        copy_skill(src, dest)
+        model, _ = resolve(models, local, meta["tier"], "zed")
+        text = render_body(name, body, skills, models, local, "zed", prefix)
+        note = f"\n> {meta['tier']}-tier skill: best run on {show(model)}.\n"
+        (dest / "SKILL.md").write_text(
+            frontmatter({"name": n, "description": meta["description"]}) + note + text)
+
     zed = {t: resolve(models, local, t, "zed")[0] for t in ("fast", "balanced")}
     snippet = {
         "agent": {
@@ -293,27 +305,62 @@ def build(harness, prefix):
 
 # --- install -----------------------------------------------------------------
 
+def managed_root(path):
+    """The build dir (dist/<harness>) that owns `path`, or None if outside dist."""
+    try:
+        rel = path.relative_to(DIST)
+    except ValueError:
+        return None
+    return DIST / rel.parts[0]
+
+
+def symlink_points_within(link_path, directory):
+    """True if link_path is a symlink whose literal target sits inside
+    `directory`. Compares normalized paths without following symlinks, so a
+    link into an unrelated tree isn't adopted just because that tree links
+    back into ours."""
+    if not link_path.is_symlink():
+        return False
+    target = link_path.readlink()
+    if not target.is_absolute():
+        target = link_path.parent / target
+    target = Path(os.path.normpath(target))
+    directory = Path(os.path.normpath(directory))
+    return target == directory or directory in target.parents
+
+
 def link(src, dest):
-    """Symlink dest -> src. Replaces our own symlinks, never real files."""
+    """Symlink dest -> src. Replaces our own harness's symlinks, never other
+    entries. Returns True when dest ends up as our link."""
+    managed = managed_root(src)
     if dest.is_symlink():
+        if managed is None or not symlink_points_within(dest, managed):
+            print(f"  skip {dest}: symlink isn't managed by wintermute")
+            return False
         dest.unlink()
     elif dest.exists():
         print(f"  skip {dest}: exists and isn't a wintermute symlink")
-        return
+        return False
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.symlink_to(src)
     print(f"  {dest} -> {src}")
+    return True
 
 
 def link_all(src_dir, dest_dir):
-    """Link every entry of src_dir into dest_dir and prune stale links into dist/."""
+    """Link every entry of src_dir and prune stale links this harness owns."""
+    skipped = 0
     for src in sorted(src_dir.iterdir()):
-        link(src, dest_dir / src.name)
+        if not link(src, dest_dir / src.name):
+            skipped += 1
+    root = managed_root(src_dir) or src_dir
     if dest_dir.exists():
         for d in dest_dir.iterdir():
-            if d.is_symlink() and str(d.readlink()).startswith(str(DIST)) and not d.exists():
+            if symlink_points_within(d, root) and not d.exists():
                 d.unlink()
                 print(f"  removed stale {d}")
+    if skipped:
+        print(f"  skipped {skipped} unmanaged entr{'y' if skipped == 1 else 'ies'} in {dest_dir}")
 
 
 def append_line(path, line):
@@ -358,8 +405,8 @@ def install(harness, prefix, hook):
         for z in sorted(out.glob("*.zip")):
             print(f"  {z}")
     elif harness == "zed":
-        print("Zed's agent panel via claude-acp uses the claude-code install.")
-        print("For Zed's native agent, merge this into ~/.config/zed/settings.json:\n")
+        link_all(out / "skills", ZED_SKILLS_DIR)
+        print("Merge this into ~/.config/zed/settings.json if needed:\n")
         print((out / "settings-snippet.json").read_text())
         print(f"and add {out / 'rules.md'} to Zed's Rules Library as a default rule.")
 

@@ -101,7 +101,7 @@ wintermute install claude-code          # links ~/.claude/skills/*, imports rule
 wintermute install claude-code --hook   # also adds a SessionStart nudge toward wintermute
 wintermute install opencode             # subagents + AGENTS.md (skills come from ~/.claude/skills)
 wintermute install claude-ui            # builds zips to upload in Settings > Capabilities > Skills
-wintermute install zed                  # prints a settings snippet + rules for Zed's native agent
+wintermute install zed                  # links ~/.agents/skills/*, prints native-agent settings + rules
 ```
 
 Installs are symlinks into `dist/`, so rebuilding updates them in place. Add
