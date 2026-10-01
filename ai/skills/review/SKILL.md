@@ -34,14 +34,16 @@ State the classification and the reason in one line.
 ## Small: one reviewer
 
 Dispatch a single reviewer (`review-quick`) with the frozen scope and the
-rubric below. If the harness cannot spawn subagents, do one focused pass
+rubric below. {{dispatch}} If the harness cannot spawn subagents, do one focused pass
 yourself. Don't spin up the panel for a small change.
 
 ## Large: independent panel
 
 Dispatch the panel in parallel, in a single message, with an identical neutral
-prompt and the frozen scope: `review-claude`, `review-gpt`, `review-deepseek`.
+prompt and the frozen scope: {{panel}}. {{dispatch}}
 Never include one reviewer's output or opinions in another's prompt.
+
+{{panel_note}}
 
 Then synthesize:
 
@@ -50,7 +52,7 @@ Then synthesize:
 2. Research deeper where reviewers disagree or a claim is unverifiable: read
    the surrounding code, callers, callees, tests, and types, and fetch docs if
    needed, before asserting.
-3. Merge duplicates into one entry, record consensus as `[n/3]`, and keep
+3. Merge duplicates into one entry, record consensus as `[n/{{panel_n}}]`, and keep
    disagreements visible. Never fabricate findings to fill a band.
 
 If the harness cannot spawn subagents (e.g. a chat UI or an agent pinned to a
@@ -75,7 +77,7 @@ List findings most severe first. For each one:
 - `file:line`: one-sentence statement of the bug
 - **Fails when:** the concrete input or state and what goes wrong
 - **Fix:** a short suggestion
-- `[n/3]` on panel findings: how many independent reviewers raised it
+- `[n/{{panel_n}}]` on panel findings: how many independent reviewers raised it
 
 Close with **Open Questions** (assumptions and unverified claims) and a
 one-line summary of overall quality, test gaps, and residual risk. If there are

@@ -155,10 +155,62 @@ def router_table(skills, models, local, harness, prefix):
     return "\n".join(rows)
 
 
+def helpers_for(meta, models, harness):
+    """A skill's declared helper agents that have a model on this harness.
+    An agent with no entry for a harness is simply not offered there."""
+    known = models.get("agents", {})
+    return [h for h in meta.get("agents", []) if harness in known.get(h, {})]
+
+
+DISPATCH = {
+    "claude-code": (
+        "Dispatch with the Agent tool: set `subagent_type` to the reviewer's name "
+        "(e.g. `review-quick`) and put the frozen scope and the rubric in `prompt`. "
+        "Subagents see none of this conversation, so the prompt must be self-contained."),
+}
+DISPATCH_DEFAULT = "Dispatch with the harness's subagent mechanism."
+
+def _panel_note(n):
+    return (
+        "On this harness every reviewer is an Anthropic model, so the panel is not "
+        "independent: agreement is weaker evidence than a cross-vendor panel's. Read "
+        f"the code yourself before trusting a finding, and don't treat `[{n}/{n}]` as confirmation.")
+
+
+# Harnesses whose reviewers are all Anthropic models (see models.toml).
+ANTHROPIC_ONLY = {"claude-code", "zed"}
+SOLO_REVIEWER = "review-quick"
+
+
+HANDOFF = {
+    "claude-code": (
+        "Then invoke the `{{prefix}}<name>` skill with the Skill tool, passing the user's "
+        "goal as its args. Sub-skills are skills, not agents: never call the Agent "
+        "tool with a sub-skill's name. Each skill pins its own model."),
+}
+HANDOFF_DEFAULT = (
+    "Then:\n"
+    "- If a subagent named `{{prefix}}<name>` is available, delegate to it with the\n"
+    "  user's goal. It's pinned to the right model for the job.\n"
+    "- Otherwise, invoke the `{{prefix}}<name>` skill and follow it.")
+
+
 def render_body(name, body, skills, models, local, harness, prefix):
     if name == ROUTER:
         body = body.replace("{{table}}", router_table(skills, models, local, harness, prefix))
+        body = body.replace("{{handoff}}", HANDOFF.get(harness, HANDOFF_DEFAULT))
         body = body.replace("{{prefix}}", prefix)
+    else:
+        meta = skills[name][1]
+        helpers = helpers_for(meta, models, harness)
+        panel = [h for h in helpers if h != SOLO_REVIEWER]
+        if "{{panel}}" in body and not panel:
+            die(f"skill '{name}' has no panel helpers on harness '{harness}'")
+        body = body.replace("{{dispatch}}", DISPATCH.get(harness, DISPATCH_DEFAULT))
+        body = body.replace("{{panel}}", ", ".join(f"`{h}`" for h in panel))
+        body = body.replace("{{panel_n}}", str(len(panel)))
+        note = _panel_note(len(panel)) if harness in ANTHROPIC_ONLY else ""
+        body = body.replace("{{panel_note}}\n\n" if not note else "{{panel_note}}", note)
     return body
 
 
@@ -208,7 +260,7 @@ def build_claude_code(skills, models, local, prefix, out):
         text = render_body(name, body, skills, models, local, "claude-code", prefix)
         (dest / "SKILL.md").write_text(
             frontmatter({"name": n, "description": meta["description"], "model": model}) + text)
-        for helper in meta.get("agents", []):
+        for helper in helpers_for(meta, models, "claude-code"):
             write_helper_agent(src, helper, models, local, "claude-code", out / "agents")
     shutil.copy(RULES, out / "rules.md")
     (out / "session-start.txt").write_text(SESSION_START + "\n")
@@ -230,7 +282,7 @@ def build_opencode(skills, models, local, prefix, out):
         if name == ROUTER or meta.get("inline"):
             continue
         model, _ = resolve(models, local, meta["tier"], "opencode")
-        helpers = meta.get("agents", [])
+        helpers = helpers_for(meta, models, "opencode")
         fields = {"description": meta["description"], "mode": "subagent", "model": model}
         if helpers:
             fields["permission"] = {"task": {h: "allow" for h in helpers}}
