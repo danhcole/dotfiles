@@ -18,3 +18,6 @@ export WEZTERM_CONFIG_FILE=$HOME/.config/wezterm/wezterm.lua
 
 # Kube
 export KUBECONFIG="/Users/danhcole/git/xgen-cloud/kube-resources/.kube/config:/Users/danhcole/git/xgen-cloud/kube-resources/.kube/rmckubeconfig:/Users/danhcole/git/xgen-cloud/kube-resources/.kube/slskubeconfig:/Users/danhcole/.kube/config"
+
+# Make opencode a bit more deterministic
+export OPENCODE_DISABLE_EXTERNAL_SKILLS=1
