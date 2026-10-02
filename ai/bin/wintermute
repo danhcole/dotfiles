@@ -30,6 +30,13 @@ HOME = Path.home()
 CLAUDE_DIR = HOME / ".claude"
 OPENCODE_DIR = HOME / ".config" / "opencode"
 ZED_SKILLS_DIR = HOME / ".agents" / "skills"
+# Skill dirs opencode auto-scans in addition to its own. claude-code writes
+# ~/.claude/skills and zed writes ~/.agents/skills, so with those harnesses
+# installed opencode would see several builds of the same skill name and pick
+# one nondeterministically. The opencode install isolates it: its own skills
+# live in OPENCODE_DIR/skills, the external scans are turned off, and the
+# non-wintermute skills found here are adopted into that dir.
+EXTERNAL_SKILL_DIRS = [CLAUDE_DIR / "skills", ZED_SKILLS_DIR]
 SESSION_START = "For non-trivial engineering tasks, start with the `wintermute` skill."
 
 
@@ -267,11 +274,15 @@ def build_claude_code(skills, models, local, prefix, out):
 
 
 def build_opencode(skills, models, local, prefix, out):
-    """Subagents pinned to each tier's model; they load the matching skill.
-    Also builds skills for machines without Claude Code (opencode reads
-    ~/.claude/skills itself when it exists)."""
+    """Subagents pinned to each tier's model, plus opencode's own skills and
+    one slash command per skill (opencode surfaces skills only through the
+    `skill` tool otherwise). The install points opencode at OPENCODE_DIR/skills
+    and disables the external (.claude/.agents) scans, so opencode never loads
+    a build made for another harness."""
     agents = out / "agents"
     agents.mkdir(parents=True)
+    commands = out / "command"
+    commands.mkdir(parents=True)
     for name, (src, meta, body) in skills.items():
         n = out_name(name, prefix)
         dest = out / "skills" / n
@@ -280,17 +291,25 @@ def build_opencode(skills, models, local, prefix, out):
         (dest / "SKILL.md").write_text(
             frontmatter({"name": n, "description": meta["description"]}) + text)
         if name == ROUTER or meta.get("inline"):
-            continue
-        model, _ = resolve(models, local, meta["tier"], "opencode")
-        helpers = helpers_for(meta, models, "opencode")
-        fields = {"description": meta["description"], "mode": "subagent", "model": model}
-        if helpers:
-            fields["permission"] = {"task": {h: "allow" for h in helpers}}
-        (agents / f"{n}.md").write_text(
-            frontmatter(fields)
-            + f"\nLoad the `{n}` skill and follow it for the task you were given.\n")
-        for helper in helpers:
-            write_helper_agent(src, helper, models, local, "opencode", agents)
+            # The router delegates and inline skills need the live conversation,
+            # so both run in the current agent.
+            cmd_fields = {"description": meta["description"]}
+            cmd_body = f"Load the `{n}` skill and follow it. $ARGUMENTS\n"
+        else:
+            model, _ = resolve(models, local, meta["tier"], "opencode")
+            helpers = helpers_for(meta, models, "opencode")
+            fields = {"description": meta["description"], "mode": "subagent", "model": model}
+            if helpers:
+                fields["permission"] = {"task": {h: "allow" for h in helpers}}
+            (agents / f"{n}.md").write_text(
+                frontmatter(fields)
+                + f"\nLoad the `{n}` skill and follow it for the task you were given.\n")
+            for helper in helpers:
+                write_helper_agent(src, helper, models, local, "opencode", agents)
+            # The command runs the model-pinned subagent, which loads the skill.
+            cmd_fields = {"description": meta["description"], "agent": n}
+            cmd_body = "$ARGUMENTS\n"
+        (commands / f"{n}.md").write_text(frontmatter(cmd_fields) + "\n" + cmd_body)
     shutil.copy(RULES, out / "AGENTS.md")
 
 
@@ -425,6 +444,25 @@ def append_line(path, line):
     print(f"  added to {path}: {line}")
 
 
+def adopt_external_skills(src_dirs, dest_dir):
+    """Symlink skills from dirs opencode would otherwise auto-scan into
+    opencode's own skills dir, so disabling the external scan loses nothing.
+    Wintermute-managed entries are skipped: opencode gets its own build.
+    Existing entries are left alone, so the harness's own skills win."""
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    for src_dir in src_dirs:
+        if not src_dir.is_dir():
+            continue
+        for entry in sorted(src_dir.iterdir()):
+            dest = dest_dir / entry.name
+            if dest.is_symlink() or dest.exists():
+                continue
+            if symlink_points_within(entry, DIST):
+                continue
+            dest.symlink_to(entry)
+            print(f"  adopted {dest} -> {entry}")
+
+
 def install_hook(out):
     settings_path = CLAUDE_DIR / "settings.json"
     settings = json.loads(settings_path.read_text()) if settings_path.exists() else {}
@@ -449,9 +487,13 @@ def install(harness, prefix, hook):
             install_hook(out)
     elif harness == "opencode":
         link_all(out / "agents", OPENCODE_DIR / "agents")
-        if not CLAUDE_DIR.exists():
-            link_all(out / "skills", OPENCODE_DIR / "skills")
+        link_all(out / "skills", OPENCODE_DIR / "skills")
+        link_all(out / "command", OPENCODE_DIR / "command")
+        adopt_external_skills(EXTERNAL_SKILL_DIRS, OPENCODE_DIR / "skills")
         link(out / "AGENTS.md", OPENCODE_DIR / "AGENTS.md")
+        print("  note: set OPENCODE_DISABLE_EXTERNAL_SKILLS=1 for opencode so it "
+              "ignores ~/.claude/skills and ~/.agents/skills; re-run this after "
+              "adding skills there to adopt them")
     elif harness == "claude-ui":
         print("upload each zip in Claude: Settings > Capabilities > Skills")
         for z in sorted(out.glob("*.zip")):

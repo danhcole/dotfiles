@@ -45,7 +45,8 @@ How the tier takes effect:
 - **Claude Code** (and Zed through `claude-acp`): becomes the skill's `model:`,
   so each sub-skill runs on its own model.
 - **opencode**: skills can't set a model, so each sub-skill also gets a
-  subagent pinned to its tier's model. The router hands off to it.
+  subagent pinned to its tier's model, and a slash command (`/wintermute`,
+  `/wt-review`, ...) that runs it. The router hands off to the subagent.
 - **Claude UI**, **Zed's native agent**: can't switch models mid-chat. Each
   skill carries a note saying which model it's best on.
 
@@ -99,10 +100,25 @@ of through a model-pinned subagent, so it keeps the context it needs.
 ```bash
 wintermute install claude-code          # links ~/.claude/skills/*, imports rules into CLAUDE.md
 wintermute install claude-code --hook   # also adds a SessionStart nudge toward wintermute
-wintermute install opencode             # subagents + AGENTS.md (skills come from ~/.claude/skills)
+wintermute install opencode             # skills + subagents + AGENTS.md, isolated from ~/.claude and ~/.agents
 wintermute install claude-ui            # builds zips to upload in Settings > Capabilities > Skills
 wintermute install zed                  # links ~/.agents/skills/*, prints native-agent settings + rules
 ```
 
 Installs are symlinks into `dist/`, so rebuilding updates them in place. Add
 `--no-prefix` to drop the `wt-` prefix from sub-skill names.
+
+opencode auto-scans `~/.claude/skills` and `~/.agents/skills` on top of its own
+`~/.config/opencode/skills`, and dedupes skill names nondeterministically. So
+when claude-code and/or zed are also installed, opencode can load another
+harness's build of `wintermute`/`wt-*`. `install opencode` therefore keeps
+opencode's own build and symlinks the other (non-wintermute) external skills
+into `~/.config/opencode/skills`. Set `OPENCODE_DISABLE_EXTERNAL_SKILLS=1` in
+your environment so opencode never sees the duplicates, and re-run
+`install opencode` after adding skills under `~/.claude` or `~/.agents` to
+adopt them.
+
+opencode only surfaces skills to the model, so the build also emits one command
+per skill (`~/.config/opencode/command/<name>.md`) — `/wintermute`,
+`/wt-review`, and so on — which run the skill (sub-skills via their pinned
+subagent).
