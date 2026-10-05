@@ -68,5 +68,5 @@ doesn't matter what directory you're in.
 - One skill, one job. If the goal is really several distinct jobs, say so and
   suggest splitting them.
 - Don't name a model anywhere; the tier resolves to a model per harness.
-- If `wintermute new` says the name exists, either pick another name or confirm
-  the user wants to rewrite the existing skill.
+- If `wintermute new` says the name exists, either pick another name or, if
+  the user wants to change the existing skill, hand off to `wt-edit-skill`.

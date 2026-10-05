@@ -27,7 +27,7 @@ Each skill declares `tier: fast | balanced | deep` and never names a model.
 |----------|--------|
 | fast     | Sonnet |
 | balanced | Opus   |
-| deep     | Fable  |
+| deep     | Opus   |
 
 To use a different model set on one machine (at work, say), create
 `models.local.toml` with only the entries that differ. It's merged over
@@ -57,6 +57,9 @@ wintermute new explain --tier balanced
 $EDITOR ~/git/danhcole/dotfiles/ai/skills/explain/SKILL.md
 wintermute install claude-code
 ```
+
+To change an existing skill, run `/wintermute edit-skill <what to change>` (or
+`/wt-edit-skill`). It edits the source in `skills/<name>/` and reinstalls.
 
 Frontmatter supports flat `key: value` and `key: [a, b]` only:
 

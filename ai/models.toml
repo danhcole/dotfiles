@@ -24,10 +24,10 @@ zed         = { provider = "anthropic", model = "claude-opus-5-5" }
 
 [tiers.deep]
 description = "review, planning, hard debugging"
-claude-code = "fable"
-claude-ui   = "Fable"
-opencode    = "anthropic/claude-fable-5-1"
-zed         = { provider = "anthropic", model = "claude-fable-5-1" }
+claude-code = "opus"
+claude-ui   = "Opus"
+opencode    = "anthropic/claude-opus-5-5"
+zed         = { provider = "anthropic", model = "claude-opus-5-5" }
 
 # Helper agents declared by skills via `agents: [...]` in their frontmatter,
 # keyed by agent name. The review skill uses these: `review-quick` is the single
