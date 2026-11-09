@@ -50,5 +50,13 @@ eval "$(starship init zsh)"
 export STARSHIP_CONFIG=~/.config/starship/starship.toml
 
 # wt (git worktrees)
-if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
-export PATH="/Users/danhcole/.local/bin:$PATH"
+# Init output is cached and regenerated whenever the wt binary is newer (saves ~50ms)
+if (( $+commands[wt] )); then
+  _wt_cache=~/.cache/wt-init.zsh
+  if [[ ! -s $_wt_cache || $commands[wt] -nt $_wt_cache ]]; then
+    mkdir -p ${_wt_cache:h}
+    command wt config shell init zsh >| $_wt_cache
+  fi
+  source $_wt_cache
+  unset _wt_cache
+fi
